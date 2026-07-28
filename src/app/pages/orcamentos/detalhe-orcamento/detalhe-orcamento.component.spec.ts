@@ -62,4 +62,24 @@ describe('DetalheOrcamentoComponent', () => {
     expect(component.itemDescricao(item)).toBe('Instalação avulsa');
     expect(component.itemSubtotal(item)).toBe(100);
   });
+
+  it('abre o WhatsApp com o texto completo do orçamento', () => {
+    const component = criarComponente();
+    component.orcamento = {
+      id: 10,
+      protocolo: 'SL-20260724-000010',
+      nomeContato: 'Maria',
+      telefoneContato: '(11) 99999-9999',
+      total: 100,
+      itens: [{ id: 1, descricao: 'Produto teste', quantidade: 2, valorUnitario: 50, subtotal: 100 }],
+    };
+    const windowOpen = spyOn(window, 'open');
+
+    component.abrirWhatsApp();
+
+    const url = windowOpen.calls.mostRecent().args[0] as string;
+    expect(url).toContain('https://wa.me/5511999999999?text=');
+    expect(decodeURIComponent(url)).toContain('orçamento *SL-20260724-000010*');
+    expect(decodeURIComponent(url)).toContain('1. *Produto teste*');
+  });
 });

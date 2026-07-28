@@ -23,6 +23,7 @@ import { FormatoImpressaoOrcamento, Orcamento, OrcamentoItem, OrcamentoStatus } 
 import { TelefonePipe } from 'src/app/pipe/telefone.pipe';
 import { AuthService } from 'src/app/services/auth.service';
 import { OrcamentoService } from 'src/app/services/orcamento.service';
+import { montarUrlWhatsAppOrcamento } from '../shared/orcamento-whatsapp.util';
 
 type StatusOption = {
   value: OrcamentoStatus;
@@ -232,12 +233,16 @@ export class DetalheOrcamentoComponent implements OnInit {
 
   abrirWhatsApp(): void {
     const telefone = this.telefoneNormalizado();
-    if (!telefone) {
+    if (!telefone || !this.orcamento) {
       this.toastr.info('Este orçamento não possui telefone para WhatsApp.');
       return;
     }
 
-    window.open(`https://wa.me/${telefone}`, '_blank', 'noopener,noreferrer');
+    window.open(
+      montarUrlWhatsAppOrcamento(telefone, this.orcamento),
+      '_blank',
+      'noopener,noreferrer'
+    );
   }
 
   imprimirA4(): void {
