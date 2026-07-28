@@ -16,6 +16,7 @@ export interface NavItem {
     ddType?: string;
     bgcolor?:string;
     requiredPermission?: string[];
+    featureKey?: string;
     allowedEmpresaTipos?: TipoEmpresa[];
     catalogoModo?: 'LEGADO_DEPOSITO' | 'CATALOGO_NOVO';
     proprietarioOnly?: boolean;

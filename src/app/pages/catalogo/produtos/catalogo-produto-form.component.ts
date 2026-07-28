@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { Subject, forkJoin, takeUntil } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
+import { MatTabChangeEvent } from '@angular/material/tabs';
 import { ToastrService } from 'ngx-toastr';
 import { ConfirmDialogComponent } from 'src/app/components/dialog/confirm-dialog/confirm-dialog.component';
 import { DepositoImagemGaleriaComponent } from 'src/app/pages/deposito/components/deposito-imagem-galeria/deposito-imagem-galeria.component';
@@ -27,15 +28,22 @@ import { InputMoedaComponent } from 'src/app/components/inputs/input-moeda/input
 import { InputNumericoComponent } from 'src/app/components/inputs/input-numerico/input-numerico.component';
 import { InputTextareaComponent } from 'src/app/components/inputs/input-textarea/input-textarea.component';
 import { InputTextoRestritoComponent } from 'src/app/components/inputs/input-texto/input-texto-restrito.component';
+import { AuthService } from 'src/app/services/auth.service';
+import { FeatureFlagService } from 'src/app/services/feature-flag.service';
+import {
+  CALCULADORA_MATERIAIS_MODULO,
+  CALCULADORA_MATERIAIS_PERMISSAO_CONFIGURAR,
+} from 'src/app/pages/calculadora-materiais/shared/calculadora-material.models';
+import { ProdutoCalculadoraMateriaisTabComponent } from 'src/app/pages/cadastro-tecnico/produtos/form-produto/calculadora-materiais/produto-calculadora-materiais-tab.component';
 
 @Component({
   selector: 'app-catalogo-produto-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, MaterialModule, PageCardComponent, SectionCardComponent, RichTextEditorComponent, DepositoImagemGaleriaComponent, CatalogoProdutoCaracteristicasComponent, InputMoedaComponent, InputNumericoComponent, InputTextareaComponent, InputTextoRestritoComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, MaterialModule, PageCardComponent, SectionCardComponent, RichTextEditorComponent, DepositoImagemGaleriaComponent, CatalogoProdutoCaracteristicasComponent, InputMoedaComponent, InputNumericoComponent, InputTextareaComponent, InputTextoRestritoComponent, ProdutoCalculadoraMateriaisTabComponent],
   template: `
     <app-page-card [titulo]="isEdit ? 'Editar produto' : 'Novo produto'" subtitulo="Produto do novo catalogo administrativo">
       <form [formGroup]="form" (ngSubmit)="salvar()">
-        <mat-tab-group>
+        <mat-tab-group [selectedIndex]="selectedTabIndex" (selectedTabChange)="onTabChange($event)">
           <mat-tab label="Dados gerais">
             <app-section-card titulo="Identificacao" subtitulo="Codigo, nome, categoria, marca e exibicao">
               <div class="grid">
@@ -84,14 +92,21 @@ import { InputTextoRestritoComponent } from 'src/app/components/inputs/input-tex
               <app-catalogo-produto-caracteristicas #caracteristicasEditor [definicoes]="definicoes" [valores]="valoresCaracteristicas"></app-catalogo-produto-caracteristicas>
             </app-section-card>
           </mat-tab>
+
+          <mat-tab *ngIf="exibirAbaCalculadoraMateriais" label="Calculadora de Materiais">
+            <app-produto-calculadora-materiais-tab
+              *ngIf="produtoId"
+              [produtoId]="produtoId">
+            </app-produto-calculadora-materiais-tab>
+          </mat-tab>
         </mat-tab-group>
-        <div class="actions"><button mat-stroked-button type="button" (click)="voltar()">Voltar</button><button mat-flat-button color="primary" type="submit" [disabled]="salvando || uploading || form.invalid">{{ salvando ? 'Salvando...' : 'Salvar' }}</button></div>
+        <div class="actions"><button mat-stroked-button type="button" (click)="voltar()">Voltar</button><button mat-flat-button color="primary" type="submit" [disabled]="salvando || uploading">{{ salvando ? 'Salvando...' : 'Salvar' }}</button></div>
       </form>
     </app-page-card>
   `,
   styles: [`.grid{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px}.comercial{grid-template-columns:repeat(2,minmax(0,220px))}.toggles,.actions{display:flex; gap:16px; justify-content:flex-end; margin-top:16px}mat-tab-group{margin-top:8px}.rich-field{margin-top:8px}.rich-field label{display:block;font-weight:600;margin-bottom:4px}.rich-field p{color:#6b7280;margin:0 0 8px}.preview-button{margin-top:10px}.preview{border:1px solid #e5eaef;border-radius:8px;padding:12px;margin-top:10px;background:#f8fafc}.loading{display:flex;align-items:center;gap:10px;color:#6b7280;margin-bottom:12px}@media(max-width:900px){.grid,.comercial{grid-template-columns:1fr}.actions{flex-direction:column}}`],
 })
-export class CatalogoProdutoFormComponent implements OnInit, CanDeactivateWithPendingChanges {
+export class CatalogoProdutoFormComponent implements OnInit, OnDestroy, CanDeactivateWithPendingChanges {
   @ViewChild('caracteristicasEditor') caracteristicasEditor?: CatalogoProdutoCaracteristicasComponent;
   form = this.fb.group({
     codigo: ['', Validators.required],
@@ -137,24 +152,44 @@ export class CatalogoProdutoFormComponent implements OnInit, CanDeactivateWithPe
   slugManual = false;
   visualizarDescricao = false;
   carregandoEstrutura = false;
+  selectedTabIndex = 0;
+  exibirAbaCalculadoraMateriais = false;
+  readonly abas = ['dados-gerais', 'comercial', 'imagens', 'caracteristicas'];
+  readonly calculadoraMateriaisTabKey = 'calculadora-materiais';
   private categoriaAnteriorId: number | null = null;
+  private readonly destroy$ = new Subject<void>();
+  private queryParamTab: string | null = null;
+  private moduloCalculadoraMateriaisHabilitado = false;
+  private permissaoCalculadoraMateriais = false;
 
-  constructor(private readonly fb: FormBuilder, private readonly produtoService: CatalogoProdutoService, private readonly categoriaService: CatalogoCategoriaService, private readonly marcaService: CatalogoMarcaService, private readonly route: ActivatedRoute, private readonly router: Router, private readonly toastr: ToastrService, private readonly dialog: MatDialog) {}
+  constructor(private readonly fb: FormBuilder, private readonly produtoService: CatalogoProdutoService, private readonly categoriaService: CatalogoCategoriaService, private readonly marcaService: CatalogoMarcaService, private readonly route: ActivatedRoute, private readonly router: Router, private readonly toastr: ToastrService, private readonly dialog: MatDialog, private readonly auth: AuthService, private readonly featureFlagService: FeatureFlagService) {}
 
   ngOnInit(): void {
     forkJoin({ categorias: this.categoriaService.options(true), marcas: this.marcaService.options(true) }).subscribe({ next: ({ categorias, marcas }) => { this.categorias = categorias || []; this.marcas = marcas || []; } });
     this.form.controls.nome.valueChanges.subscribe((nome) => { if (!this.slugManual) this.form.controls.slug.setValue(catalogoSlugify(nome || ''), { emitEvent: false }); });
     this.form.controls.sobConsulta.valueChanges.subscribe((sobConsulta) => this.atualizarValidacaoPreco(!!sobConsulta));
     this.form.controls.exibirPreco.valueChanges.subscribe(() => this.atualizarValidacaoPreco(!!this.form.value.sobConsulta));
+    this.queryParamTab = this.route.snapshot.queryParamMap.get('tab');
+    this.carregarDisponibilidadeCalculadoraMateriais();
     const id = Number(this.route.snapshot.paramMap.get('id'));
     if (id) {
       this.isEdit = true;
       this.produtoId = id;
+      this.atualizarAbas();
       this.produtoService.detalhar(id).subscribe({
         next: (produto) => this.aplicarProduto(produto),
         error: (error) => this.toastr.error(catalogoErrorMessage(error, 'Produto nao encontrado.')),
       });
     }
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  onTabChange(event: MatTabChangeEvent): void {
+    this.selectedTabIndex = event.index;
   }
 
   onCategoriaChange(categoriaId: number | null): void {
@@ -197,6 +232,8 @@ export class CatalogoProdutoFormComponent implements OnInit, CanDeactivateWithPe
   salvar(): void {
     if (this.form.invalid || this.uploading) {
       this.form.markAllAsTouched();
+      this.selectedTabIndex = this.indicePrimeiraAbaInvalida();
+      this.toastr.warning('Revise os campos obrigatorios do produto.');
       return;
     }
     if (this.caracteristicasEditor && !this.caracteristicasEditor.isValid()) {
@@ -252,6 +289,45 @@ export class CatalogoProdutoFormComponent implements OnInit, CanDeactivateWithPe
     this.valoresCaracteristicas = produto.caracteristicas || [];
     this.categoriaAnteriorId = produto.categoria?.id || null;
     this.form.markAsPristine();
+  }
+
+  private carregarDisponibilidadeCalculadoraMateriais(): void {
+    this.permissaoCalculadoraMateriais = this.auth.temPermissao(CALCULADORA_MATERIAIS_PERMISSAO_CONFIGURAR);
+
+    this.featureFlagService.carregar()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.moduloCalculadoraMateriaisHabilitado = this.featureFlagService.isEnabled(CALCULADORA_MATERIAIS_MODULO);
+        this.atualizarAbas();
+      });
+  }
+
+  private atualizarAbas(): void {
+    const currentKey = this.abaKeyPorIndice(this.selectedTabIndex);
+    this.exibirAbaCalculadoraMateriais = this.isEdit
+      && this.moduloCalculadoraMateriaisHabilitado
+      && this.permissaoCalculadoraMateriais;
+
+    const requestedKey = this.queryParamTab === this.calculadoraMateriaisTabKey ? this.queryParamTab : null;
+    const preferredKey = requestedKey || currentKey;
+    this.selectedTabIndex = this.indicePorAbaKey(preferredKey);
+  }
+
+  private abaKeyPorIndice(index: number): string {
+    const abasDisponiveis = this.abasDisponiveis();
+    return abasDisponiveis[index] || this.abas[0];
+  }
+
+  private indicePorAbaKey(key: string | null): number {
+    if (!key) return 0;
+    const index = this.abasDisponiveis().indexOf(key);
+    return index >= 0 ? index : 0;
+  }
+
+  private abasDisponiveis(): string[] {
+    return this.exibirAbaCalculadoraMateriais
+      ? [...this.abas, this.calculadoraMateriaisTabKey]
+      : [...this.abas];
   }
 
   private carregarEstrutura(categoriaId: number, valoresParaPreservar?: CatalogoProduto['caracteristicas']): void {
@@ -331,5 +407,15 @@ export class CatalogoProdutoFormComponent implements OnInit, CanDeactivateWithPe
     if (!sobConsulta && this.form.value.exibirPreco) validators.push(Validators.required);
     this.form.controls.precoVenda.setValidators(validators);
     this.form.controls.precoVenda.updateValueAndValidity({ emitEvent: false });
+  }
+
+  private indicePrimeiraAbaInvalida(): number {
+    const dadosGerais = ['codigo', 'nome', 'slug', 'categoriaId', 'unidadeVenda', 'ordemExibicao', 'descricaoCurta'];
+    if (dadosGerais.some((control) => this.form.get(control)?.invalid)) return this.indicePorAbaKey('dados-gerais');
+
+    const comercial = ['precoVenda', 'precoPromocional', 'exibirPreco', 'sobConsulta', 'permiteOrcamento'];
+    if (comercial.some((control) => this.form.get(control)?.invalid)) return this.indicePorAbaKey('comercial');
+
+    return this.selectedTabIndex;
   }
 }

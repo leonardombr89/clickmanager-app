@@ -1,0 +1,153 @@
+.calc-actions {
+  display: flex;
+  align-items: center;
+}
+
+.loading-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 88px;
+}
+
+.calc-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.summary-item {
+  min-height: 76px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.summary-item span {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.summary-item strong {
+  color: #111827;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.summary-item--status {
+  border-left: 3px solid #2563eb;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px 16px;
+  align-items: start;
+}
+
+.field-shell,
+.toggle-shell {
+  min-width: 0;
+}
+
+.toggle-shell {
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  padding-top: 22px;
+}
+
+.pendencias {
+  padding: 14px 16px;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fff7f7;
+}
+
+.pendencias__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #991b1b;
+}
+
+.pendencias__title mat-icon {
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+}
+
+.pendencias ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: #111827;
+}
+
+.actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.actions-row button {
+  min-height: 40px;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.status-pill--HABILITADO,
+.status-pill--PRONTO_PARA_HABILITAR {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-pill--CONFIGURACAO_INCOMPLETA,
+.status-pill--NAO_CONFIGURADO,
+.status-pill--PRECO_NAO_CONFIGURADO,
+.status-pill--PRODUTO_INATIVO {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+@media (max-width: 900px) {
+  .form-grid,
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .toggle-shell {
+    min-height: auto;
+    padding-top: 0;
+  }
+
+  .actions-row {
+    justify-content: stretch;
+  }
+
+  .actions-row button {
+    width: 100%;
+  }
+}

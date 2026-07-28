@@ -29,6 +29,13 @@ import { PageCardComponent } from 'src/app/components/page-card/page-card.compon
 import { SectionCardComponent } from 'src/app/components/section-card/section-card.component';
 import { InputTextareaComponent } from 'src/app/components/inputs/input-textarea/input-textarea.component';
 import { MobileTotalBarComponent } from 'src/app/components/mobile-total-bar/mobile-total-bar.component';
+import { AuthService } from 'src/app/services/auth.service';
+import { FeatureFlagService } from 'src/app/services/feature-flag.service';
+import {
+  CALCULADORA_MATERIAIS_MODULO,
+  CALCULADORA_MATERIAIS_PERMISSAO_CONFIGURAR,
+} from 'src/app/pages/calculadora-materiais/shared/calculadora-material.models';
+import { ProdutoCalculadoraMateriaisTabComponent } from './calculadora-materiais/produto-calculadora-materiais-tab.component';
 
 @Component({
   selector: 'app-form-produto',
@@ -49,26 +56,29 @@ import { MobileTotalBarComponent } from 'src/app/components/mobile-total-bar/mob
     PageCardComponent,
     SectionCardComponent,
     InputTextareaComponent,
-    MobileTotalBarComponent
+    MobileTotalBarComponent,
+    ProdutoCalculadoraMateriaisTabComponent
   ],
   templateUrl: './form-produto.component.html',
   styleUrls: ['./form-produto.component.scss'],
 })
 export class FormProdutoComponent implements OnInit, OnDestroy {
   @ViewChild('wizardTop') wizardTop?: ElementRef<HTMLElement>;
-  readonly totalSteps = 4;
-  readonly wizardSteps = [
+  readonly baseWizardSteps = [
     { key: 'produto', label: 'Produto' },
     { key: 'estrutura', label: 'Estrutura' },
     { key: 'preco', label: 'Preço' },
     { key: 'revisao', label: 'Revisão' },
   ] as const;
+  readonly calculadoraMateriaisTabKey = 'calculadora-materiais';
+  wizardSteps: Array<{ key: string; label: string }> = [...this.baseWizardSteps];
 
   form!: FormGroup;
   isEditMode = false;
   produtoId!: number;
   politicaDoProduto: PoliticaRevenda | null = null;
   currentStep = 1;
+  exibirAbaCalculadoraMateriais = false;
 
   /** estado local das variações (o filho emite alterações) */
   variacoes: VariacaoProduto[] = [];
@@ -80,6 +90,9 @@ export class FormProdutoComponent implements OnInit, OnDestroy {
   loading = false;
 
   private readonly destroy$ = new Subject<void>();
+  private queryParamTab: string | null = null;
+  private moduloCalculadoraMateriaisHabilitado = false;
+  private permissaoCalculadoraMateriais = false;
 
   constructor(
     private readonly fb: FormBuilder,
@@ -87,13 +100,16 @@ export class FormProdutoComponent implements OnInit, OnDestroy {
     private readonly router: Router,
     private readonly produtoService: ProdutoService,
     private readonly toastr: ToastrService,
-    private readonly cdr: ChangeDetectorRef
+    private readonly cdr: ChangeDetectorRef,
+    private readonly authService: AuthService,
+    private readonly featureFlagService: FeatureFlagService
   ) { }
 
   // ================= lifecycle =================
 
   ngOnInit(): void {
     this.buildForm();
+    this.carregarDisponibilidadeCalculadoraMateriais();
     this.detectEditModeAndLoad();
   }
 
@@ -134,8 +150,44 @@ export class FormProdutoComponent implements OnInit, OnDestroy {
         this.produtoId = Number(idParam);
         if (!Number.isFinite(this.produtoId)) return;
 
+        this.queryParamTab = this.route.snapshot.queryParamMap.get('tab');
+        this.atualizarWizardSteps();
         this.fetchProduto(this.produtoId);
       });
+  }
+
+  private carregarDisponibilidadeCalculadoraMateriais(): void {
+    this.permissaoCalculadoraMateriais = this.authService.temPermissao(CALCULADORA_MATERIAIS_PERMISSAO_CONFIGURAR);
+
+    this.featureFlagService.carregar()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.moduloCalculadoraMateriaisHabilitado = this.featureFlagService.isEnabled(CALCULADORA_MATERIAIS_MODULO);
+        this.atualizarWizardSteps();
+        this.cdr.markForCheck();
+      });
+  }
+
+  private atualizarWizardSteps(): void {
+    const currentKey = this.currentStepKey;
+    this.exibirAbaCalculadoraMateriais = this.isEditMode
+      && this.moduloCalculadoraMateriaisHabilitado
+      && this.permissaoCalculadoraMateriais;
+
+    this.wizardSteps = this.exibirAbaCalculadoraMateriais
+      ? [...this.baseWizardSteps, { key: this.calculadoraMateriaisTabKey, label: 'Calculadora de Materiais' }]
+      : [...this.baseWizardSteps];
+
+    const queryKey = this.queryParamTab === this.calculadoraMateriaisTabKey ? this.queryParamTab : null;
+    const preferredKey = queryKey || currentKey;
+    const preferredIndex = this.wizardSteps.findIndex((step) => step.key === preferredKey);
+
+    if (preferredIndex >= 0) {
+      this.currentStep = preferredIndex + 1;
+      return;
+    }
+
+    this.currentStep = 1;
   }
 
   private fetchProduto(id: number): void {
@@ -321,6 +373,7 @@ export class FormProdutoComponent implements OnInit, OnDestroy {
   }
 
   get showMobileWizardFooter(): boolean {
+    if (this.currentStep === this.calculadoraMateriaisStep) return false;
     return this.currentStep !== 2;
   }
 
@@ -329,13 +382,15 @@ export class FormProdutoComponent implements OnInit, OnDestroy {
   }
 
   get mobileWizardFooterValueText(): string {
-    switch (this.currentStep) {
-      case 1:
+    switch (this.currentStepKey) {
+      case 'produto':
         return 'Produto';
-      case 3:
+      case 'preco':
         return 'Preço';
-      case 4:
+      case 'revisao':
         return 'Revisão';
+      case 'calculadora-materiais':
+        return 'Calculadora';
       default:
         return '';
     }
@@ -660,14 +715,38 @@ export class FormProdutoComponent implements OnInit, OnDestroy {
   }
 
   get maxAccessibleStep(): number {
+    if (this.isEditMode) return this.totalSteps;
+    if (this.currentStep === this.calculadoraMateriaisStep) return this.calculadoraMateriaisStep;
     if (!this.stepProdutoCompleta) return 1;
     if (!this.stepEstruturaCompleta) return 2;
     if (!this.stepPrecoCompleta) return 3;
-    return 4;
+    return this.exibirAbaCalculadoraMateriais ? this.calculadoraMateriaisStep : this.revisaoStep;
   }
 
   isStepComplete(step: number): boolean {
+    if (step === this.calculadoraMateriaisStep) return false;
     return [this.stepProdutoCompleta, this.stepEstruturaCompleta, this.stepPrecoCompleta, this.prontoParaSalvar][step - 1] ?? false;
+  }
+
+  get totalSteps(): number {
+    return this.wizardSteps.length;
+  }
+
+  get currentStepKey(): string {
+    return this.wizardSteps[this.currentStep - 1]?.key ?? 'produto';
+  }
+
+  get calculadoraMateriaisStep(): number {
+    return this.stepIndexByKey(this.calculadoraMateriaisTabKey);
+  }
+
+  get revisaoStep(): number {
+    return this.stepIndexByKey('revisao');
+  }
+
+  private stepIndexByKey(key: string): number {
+    const index = this.wizardSteps.findIndex((step) => step.key === key);
+    return index >= 0 ? index + 1 : 0;
   }
 
   private traduzirTipoPreco(tipo: string): string {

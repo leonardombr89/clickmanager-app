@@ -5,7 +5,7 @@ import { MatSidenav, MatSidenavContent } from '@angular/material/sidenav';
 import { MatDialog } from '@angular/material/dialog';
 import { CoreService } from 'src/app/services/core.service';
 import { AppSettings } from 'src/app/config';
-import { distinctUntilChanged, filter } from 'rxjs/operators';
+import { distinctUntilChanged, filter, take } from 'rxjs/operators';
 import { NavigationEnd, Router } from '@angular/router';
 import { Location } from '@angular/common';
 import { navItems } from './vertical/sidebar/sidebar-data';
@@ -41,6 +41,7 @@ import {
   ConfiguracaoAplicativos,
 } from 'src/app/models/config/configuracao-aplicativos.model';
 import { ConfiguracaoAplicativosService } from 'src/app/services/configuracao-aplicativos.service';
+import { FeatureFlagService } from 'src/app/services/feature-flag.service';
 
 const MOBILE_VIEW = 'screen and (max-width: 768px)';
 const TABLET_VIEW = 'screen and (min-width: 769px) and (max-width: 1024px)';
@@ -205,6 +206,7 @@ export class FullComponent implements OnInit, OnDestroy {
     private notificacaoService: NotificacaoService,
     private catalogoContext: CatalogoEmpresaContextService,
     private configuracaoAplicativosService: ConfiguracaoAplicativosService,
+    private featureFlagService: FeatureFlagService,
   ) {
     effect(() => {
       this.atualizarLinksEmpresa(this.configuracaoAplicativosService.configuracao());
@@ -261,6 +263,10 @@ export class FullComponent implements OnInit, OnDestroy {
         const permissoes = (usuario.perfil?.permissoes || []).map(p => p.chave);
         this.navItemsFiltrados = this.filtrarMenus(navItems, permissoes, this.tipoEmpresaAtual, this.versaoCatalogoAtual, usuario);
         this.mobileNavGroups = this.buildMobileNavGroups(this.navItemsFiltrados);
+        this.featureFlagService.carregar().pipe(take(1)).subscribe(() => {
+          this.navItemsFiltrados = this.filtrarMenus(navItems, permissoes, this.tipoEmpresaAtual, this.versaoCatalogoAtual, usuario);
+          this.mobileNavGroups = this.buildMobileNavGroups(this.navItemsFiltrados);
+        });
         this.currentPageTitle = this.resolveCurrentPageTitle(this.router.url);
         this.carregarStatusBilling();
         this.carregarAvisoOnboarding(usuario);
@@ -301,6 +307,9 @@ export class FullComponent implements OnInit, OnDestroy {
 
     const aceitaProprietario = (proprietarioOnly?: boolean) =>
       !proprietarioOnly || usuario.proprietario === true;
+
+    const aceitaFeature = (featureKey?: string) =>
+      !featureKey || this.featureFlagService.isEnabled(featureKey);
   
     const filtrar = (menus: NavItem[]): NavItem[] =>
       menus
@@ -308,6 +317,7 @@ export class FullComponent implements OnInit, OnDestroy {
           aceitaTipoEmpresa(menu.allowedEmpresaTipos)
           && aceitaVersaoCatalogo(menu.catalogoModo)
           && aceitaProprietario(menu.proprietarioOnly)
+          && aceitaFeature(menu.featureKey)
           && possuiPermissao(menu.requiredPermission)
         )
         .map(menu => ({

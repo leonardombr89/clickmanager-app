@@ -1,6 +1,6 @@
 export interface CalculadoraPisoProduto {
   id: number;
-  codigo: string;
+  codigo: string | null;
   nome: string;
   categoria?: string | null;
   marca?: string | null;
@@ -11,6 +11,8 @@ export interface CalculadoraPisoProduto {
   perdaPadraoPercentual?: number | null;
   ativo?: boolean | null;
   configurado?: boolean | null;
+  status?: string | null;
+  pendencias?: string[];
 }
 
 export interface CalculadoraPisoAmbienteRequest {
@@ -19,6 +21,8 @@ export interface CalculadoraPisoAmbienteRequest {
   comprimento: number;
   quantidade: number;
 }
+
+export type CalculadoraPisoModoArea = 'MEDIDAS' | 'AREA_TOTAL';
 
 export interface CalculadoraPisoRequest {
   produtoId: number;
@@ -45,7 +49,40 @@ export interface CalculadoraPisoResultado {
   avisos?: string[];
 }
 
+export type CalculadoraMaterialModoMedicao = 'MEDIDAS' | 'AREA_TOTAL';
+
+export interface CalculadoraMaterialItemResumo {
+  id: string;
+  ambienteId: string;
+  ambienteNome: string;
+  produto: CalculadoraPisoProduto;
+  resultado: CalculadoraPisoResultado;
+}
+
+export interface CalculadoraMaterialProdutoConsolidado {
+  produto: CalculadoraPisoProduto;
+  ambientes: string[];
+  resultados: CalculadoraPisoResultado[];
+  quantidadeCaixas: number;
+  areaTotal: number;
+  areaNecessaria: number;
+  areaComprada: number;
+  sobraEstimada: number;
+  valorUnitario?: number | null;
+  valorTotal?: number | null;
+}
+
+export interface CalculadoraMaterialResumoConsolidado {
+  ambientes: number;
+  produtos: CalculadoraMaterialProdutoConsolidado[];
+  produtosDiferentes: number;
+  quantidadeCaixas: number;
+  areaTotal: number;
+  valorTotal: number | null;
+}
+
 export interface CalculadoraPisoAdicionarOrcamentoRequest {
+  orcamentoReferencia?: string | null;
   orcamentoId?: number | null;
   criarNovoOrcamento?: boolean;
   resultado: CalculadoraPisoResultado;

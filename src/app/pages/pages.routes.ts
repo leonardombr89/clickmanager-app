@@ -850,6 +850,23 @@ export const PagesRoutes: Routes = [
     }
   },
   {
+    path: 'calculadora-materiais',
+    loadComponent: () =>
+      import('./calculadora-materiais/calculadora-materiais.component').then(
+        (m) => m.CalculadoraMateriaisComponent
+      ),
+    canActivate: [featureModuleGuard, permissionGuard],
+    data: {
+      ...SHARED_ROUTE_DATA,
+      featureKey: 'CALCULADORA_MATERIAIS',
+      requiredPermission: ['CALCULADORA_MATERIAIS_CONFIGURAR'],
+      title: 'Calculadora de Materiais',
+      urls: [
+        { title: 'Calculadora de Materiais' }
+      ]
+    }
+  },
+  {
     path: 'deposito/orcamentos',
     redirectTo: 'orcamentos',
     pathMatch: 'full',

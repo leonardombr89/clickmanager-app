@@ -1,0 +1,142 @@
+<app-section-card
+  titulo="Calculadora de Materiais"
+  subtitulo="Configuracao exclusiva para calculo de revestimento por area."
+  [divider]="true">
+  <div actions class="calc-actions">
+    <span class="status-pill" [ngClass]="'status-pill--' + (config()?.status || 'NAO_CONFIGURADO')">
+      {{ statusLabel(config()?.status) }}
+    </span>
+  </div>
+
+  <div class="loading-row" *ngIf="carregando()">
+    <mat-progress-spinner diameter="28" mode="indeterminate"></mat-progress-spinner>
+    <span>Carregando configuracao...</span>
+  </div>
+
+  <div class="calc-form" [formGroup]="form" *ngIf="!carregando()">
+    <div class="summary-grid">
+      <div class="summary-item summary-item--status">
+        <span>Status</span>
+        <strong>{{ statusLabel(config()?.status) }}</strong>
+      </div>
+      <div class="summary-item">
+        <span>Unidade de venda do produto</span>
+        <strong>{{ config()?.unidadeVenda || 'Nao informada' }}</strong>
+      </div>
+    </div>
+
+    <div class="form-grid">
+      <app-input-options
+        [control]="tipoCalculoMaterialControl"
+        label="Tipo de calculo"
+        placeholder="Selecione"
+        [options]="tiposCalculo"
+        labelKey="label"
+        valueKey="value"
+        [showNull]="false">
+      </app-input-options>
+
+      <div class="field-shell">
+        <mat-label class="f-s-14 f-w-600 m-b-8 d-block">Perda padrao (%)</mat-label>
+        <mat-form-field appearance="outline" class="w-100">
+          <input matInput type="number" [formControl]="percentualPerdaPadraoControl" min="0">
+        </mat-form-field>
+      </div>
+
+      <div class="toggle-shell">
+        <mat-slide-toggle formControlName="permiteAlterarPercentualPerda">
+          Permitir alteracao da perda
+        </mat-slide-toggle>
+      </div>
+
+      <div class="field-shell">
+        <mat-label class="f-s-14 f-w-600 m-b-8 d-block">Quantidade minima</mat-label>
+        <mat-form-field appearance="outline" class="w-100">
+          <input matInput type="number" [formControl]="quantidadeMinimaVendaControl" min="0">
+        </mat-form-field>
+      </div>
+
+      <div class="field-shell">
+        <mat-label class="f-s-14 f-w-600 m-b-8 d-block">Multiplo de venda</mat-label>
+        <mat-form-field appearance="outline" class="w-100">
+          <input matInput type="number" [formControl]="multiploVendaControl" min="0">
+        </mat-form-field>
+      </div>
+
+      <app-input-options
+        [control]="unidadeComercialControl"
+        label="Unidade comercial"
+        placeholder="Selecione"
+        [options]="unidadesComerciais"
+        labelKey="label"
+        valueKey="value"
+        [showNull]="true"
+        nullLabel="Nao informada">
+      </app-input-options>
+
+      <div class="field-shell">
+        <mat-label class="f-s-14 f-w-600 m-b-8 d-block">Cobertura por embalagem (m2)</mat-label>
+        <mat-form-field appearance="outline" class="w-100">
+          <input matInput type="number" [formControl]="coberturaM2Control" min="0">
+        </mat-form-field>
+      </div>
+
+      <div class="field-shell">
+        <mat-label class="f-s-14 f-w-600 m-b-8 d-block">Pecas por embalagem</mat-label>
+        <mat-form-field appearance="outline" class="w-100">
+          <input matInput type="number" [formControl]="pecasPorEmbalagemControl" min="0">
+        </mat-form-field>
+      </div>
+
+      <div class="field-shell">
+        <mat-label class="f-s-14 f-w-600 m-b-8 d-block">Largura da peca</mat-label>
+        <mat-form-field appearance="outline" class="w-100">
+          <input matInput type="number" [formControl]="larguraPecaControl" min="0">
+        </mat-form-field>
+      </div>
+
+      <div class="field-shell">
+        <mat-label class="f-s-14 f-w-600 m-b-8 d-block">Comprimento da peca</mat-label>
+        <mat-form-field appearance="outline" class="w-100">
+          <input matInput type="number" [formControl]="comprimentoPecaControl" min="0">
+        </mat-form-field>
+      </div>
+
+      <app-input-options
+        [control]="unidadeDimensaoControl"
+        label="Unidade de dimensao"
+        placeholder="Selecione"
+        [options]="unidadesDimensao"
+        labelKey="label"
+        valueKey="value"
+        [showNull]="true"
+        nullLabel="Nao informada">
+      </app-input-options>
+    </div>
+
+    <div class="pendencias" *ngIf="pendencias().length">
+      <div class="pendencias__title">
+        <mat-icon>error_outline</mat-icon>
+        <strong>Pendencias</strong>
+      </div>
+      <ul>
+        <li *ngFor="let pendencia of pendencias()">{{ pendencia.mensagem }}</li>
+      </ul>
+    </div>
+
+    <div class="actions-row">
+      <button mat-stroked-button color="primary" type="button" (click)="salvar()" [disabled]="salvando() || habilitando()">
+        <mat-icon>save</mat-icon>
+        Salvar configuracao
+      </button>
+      <button mat-flat-button color="primary" type="button" (click)="habilitar()" [disabled]="!podeHabilitar() || salvando() || habilitando()">
+        <mat-icon>check_circle</mat-icon>
+        Habilitar produto
+      </button>
+      <button mat-button color="warn" type="button" (click)="desabilitar()" [disabled]="config()?.status !== 'HABILITADO' || salvando() || habilitando()">
+        <mat-icon>block</mat-icon>
+        Desabilitar
+      </button>
+    </div>
+  </div>
+</app-section-card>
