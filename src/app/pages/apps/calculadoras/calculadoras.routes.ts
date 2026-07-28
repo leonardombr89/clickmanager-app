@@ -10,10 +10,10 @@ export const CalculadorasRoutes: Routes = [
     data: {
       ...DEPOSITO_ROUTE_DATA,
       requiredPermission: ['CALCULADORA_PISOS_USAR'],
-      title: 'Calculadora de pisos',
+      title: 'Calculadora de Materiais',
       urls: [
         { title: 'Orçamentos', url: '/page/orcamentos' },
-        { title: 'Calculadora de pisos' },
+        { title: 'Calculadora de Materiais' },
       ],
     },
   },

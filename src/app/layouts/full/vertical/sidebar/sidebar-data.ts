@@ -319,19 +319,20 @@ export const navItems: NavItem[] = [
                 proprietarioOnly: true,
             },
             {
-                displayName: 'Armazenamento',
-                iconName: 'point',
-                bgcolor: 'transparent',
-                route: '/page/site/armazenamento',
-                requiredPermission: ['STORAGE_DASHBOARD_VER', 'STORAGE_ARQUIVOS_VER', 'STORAGE_LIXEIRA_VER', 'STORAGE_VIDEOS_VER'],
-                allowedEmpresaTipos: [TipoEmpresa.GRAFICA, TipoEmpresa.DEPOSITO],
-            },
-            {
                 displayName: 'Aplicativos e atalhos',
                 iconName: 'point',
                 bgcolor: 'transparent',
                 route: '/page/config/aplicativos-atalhos',
                 requiredPermission: ['CONFIGURACOES_APLICATIVOS_ATALHOS_VER', 'CONFIGURACOES_APLICATIVOS_ATALHOS_EDITAR'],
+                allowedEmpresaTipos: [TipoEmpresa.GRAFICA, TipoEmpresa.DEPOSITO],
+            },
+            {
+                displayName: 'Calculadora de Materiais',
+                iconName: 'point',
+                bgcolor: 'transparent',
+                route: '/page/calculadora-materiais',
+                featureKey: 'CALCULADORA_MATERIAIS',
+                requiredPermission: ['CALCULADORA_MATERIAIS_CONFIGURAR'],
                 allowedEmpresaTipos: [TipoEmpresa.GRAFICA, TipoEmpresa.DEPOSITO],
             },
             {

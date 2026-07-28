@@ -15,6 +15,27 @@
 
   <form [formGroup]="form" (ngSubmit)="onSubmit()">
     <app-section-card
+      *ngIf="isEditMode"
+      class="wizard-progress-card edit-tabs-card"
+      titulo="Areas do produto"
+      subtitulo="Edite o cadastro tecnico ou configure a calculadora."
+      [divider]="false">
+      <div class="wizard-steps-nav">
+        <button
+          *ngFor="let step of wizardSteps; let i = index"
+          type="button"
+          class="wizard-step-chip"
+          [class.wizard-step-chip--active]="currentStep === i + 1"
+          [class.wizard-step-chip--done]="isStepComplete(i + 1)"
+          [disabled]="i + 1 > maxAccessibleStep"
+          (click)="goToStep(i + 1)">
+          <span class="wizard-step-chip__index">{{ isStepComplete(i + 1) ? '✓' : (i + 1) }}</span>
+          <span class="wizard-step-chip__label">{{ step.label }}</span>
+        </button>
+      </div>
+    </app-section-card>
+
+    <app-section-card
       *ngIf="!isEditMode"
       class="wizard-progress-card"
       titulo="Fluxo do cadastro"
@@ -311,6 +332,15 @@
 
         <div class="actions-row__buttons">
           <button
+            *ngIf="exibirAbaCalculadoraMateriais"
+            mat-stroked-button
+            color="primary"
+            type="button"
+            (click)="nextStep()">
+            Configurar calculadora →
+          </button>
+
+          <button
             mat-flat-button
             color="primary"
             type="submit"
@@ -320,6 +350,19 @@
         </div>
       </div>
     </app-section-card>
+
+    <app-produto-calculadora-materiais-tab
+      *ngIf="currentStep === calculadoraMateriaisStep && exibirAbaCalculadoraMateriais"
+      [produtoId]="produtoId">
+    </app-produto-calculadora-materiais-tab>
+
+    <div
+      *ngIf="currentStep === calculadoraMateriaisStep && exibirAbaCalculadoraMateriais"
+      class="step-actions">
+      <button mat-stroked-button color="primary" type="button" (click)="previousStep()">
+        Voltar
+      </button>
+    </div>
 
     <app-mobile-total-bar
       *ngIf="showMobileWizardFooter"

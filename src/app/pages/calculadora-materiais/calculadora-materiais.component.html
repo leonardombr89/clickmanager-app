@@ -1,0 +1,70 @@
+<app-page-card
+  titulo="Calculadora de Materiais"
+  subtitulo="Gerencie produtos habilitados para calculo de materiais."
+  [mostrarDivisor]="true">
+
+  <app-section-card titulo="Produtos habilitados" [divider]="true">
+    <div class="loading-row" *ngIf="carregando()">
+      <mat-progress-spinner diameter="28" mode="indeterminate"></mat-progress-spinner>
+      <span>Carregando produtos...</span>
+    </div>
+
+    <div class="empty-state" *ngIf="!carregando() && !temProdutosHabilitados()">
+      Nenhum produto habilitado.
+    </div>
+
+    <div class="produto-list" *ngIf="!carregando() && temProdutosHabilitados()">
+      <div class="produto-row" *ngFor="let produto of habilitados()">
+        <div>
+          <strong>{{ produto.nome }}</strong>
+          <span *ngIf="produto.codigo">{{ produto.codigo }}</span>
+        </div>
+        <span class="status-pill status-pill--HABILITADO">{{ statusLabel(produto.status) }}</span>
+        <div class="row-actions">
+          <button mat-icon-button type="button" (click)="editar(produto)" matTooltip="Editar configuracao">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button color="warn" type="button" (click)="desabilitar(produto)" [disabled]="processandoId() === produto.produtoId" matTooltip="Desabilitar">
+            <mat-icon>block</mat-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+  </app-section-card>
+
+  <app-section-card titulo="Adicionar produto" subtitulo="Busque no Produto Central e habilite a calculadora." [divider]="true">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Busca de produtos</mat-label>
+      <input matInput [formControl]="buscaControl" placeholder="Nome ou codigo">
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+
+    <div class="pendencias-box" *ngIf="produtoComPendencias() as produto">
+      <strong>{{ produto.nome }}</strong>
+      <span>{{ statusLabel(produto.status) }}</span>
+      <ul>
+        <li *ngFor="let pendencia of produto.pendencias">{{ pendencia.mensagem }}</li>
+      </ul>
+      <button mat-flat-button color="primary" type="button" (click)="configurarProduto(produto)">Configurar produto</button>
+    </div>
+
+    <div class="loading-row" *ngIf="buscando()">
+      <mat-progress-spinner diameter="24" mode="indeterminate"></mat-progress-spinner>
+      <span>Buscando...</span>
+    </div>
+
+    <div class="produto-list" *ngIf="!buscando()">
+      <div class="produto-row" *ngFor="let produto of disponiveis()">
+        <div>
+          <strong>{{ produto.nome }}</strong>
+          <span *ngIf="produto.codigo">{{ produto.codigo }}</span>
+          <small *ngIf="produto.pendencias?.length">{{ pendenciasTexto(produto.pendencias) }}</small>
+        </div>
+        <span class="status-pill" [ngClass]="'status-pill--' + produto.status">{{ statusLabel(produto.status) }}</span>
+        <button mat-stroked-button color="primary" type="button" (click)="adicionarProduto(produto)" [disabled]="processandoId() === produto.produtoId">
+          Adicionar produto
+        </button>
+      </div>
+    </div>
+  </app-section-card>
+</app-page-card>
