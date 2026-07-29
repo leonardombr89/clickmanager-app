@@ -49,7 +49,6 @@ export class AppNotificacoesComponent implements OnInit, OnChanges {
     private readonly dialog: MatDialog
   ) {}
   
-
   ngOnInit(): void {
     this.authService.usuario$.subscribe(() => {
       this.podeEnviarNotificacao = this.authService.temAlgumaPermissao(this.permissoesEnviarNotificacao);
