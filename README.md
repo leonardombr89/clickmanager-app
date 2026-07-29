@@ -1,6 +1,6 @@
-# ClickManager Frontend
+# clickmanager-app
 
-Frontend Angular principal do ClickManager.
+ERP principal da plataforma ClickManager, desenvolvido com Angular.
 
 ## Endereco oficial
 
@@ -23,6 +23,9 @@ npm run build:prod
 ## Docker
 
 ```bash
-docker build -t clickmanager-frontend .
-docker run --rm -p 8080:80 clickmanager-frontend
+docker build -t clickmanager-app .
+docker run --rm -p 8080:80 clickmanager-app
 ```
+
+Para a alteração coordenada do serviço na VPS, consulte
+[docs/RENOMEACAO-APP-PRODUCAO.md](docs/RENOMEACAO-APP-PRODUCAO.md).

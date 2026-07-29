@@ -22,7 +22,7 @@ FROM nginx:alpine
 RUN rm -rf /usr/share/nginx/html/*
 
 # copia o build para a raiz servida pelo Nginx
-COPY --from=build /workspace/dist/Spike/browser /usr/share/nginx/html/
+COPY --from=build /workspace/dist/clickmanager-app/browser /usr/share/nginx/html/
 
 # Copia config SPA customizada
 COPY nginx.conf /etc/nginx/conf.d/default.conf
