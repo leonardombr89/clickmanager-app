@@ -1,8 +1,8 @@
-name: Deploy Frontend (Lightsail)
+name: Deploy ClickManager App (Lightsail)
 
 on:
   workflow_run:
-    workflows: ["Build and publish frontend Docker image"]
+    workflows: ["Build and publish ClickManager app Docker image"]
     types:
       - completed
 
@@ -20,5 +20,5 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /opt/clickmanager
-            docker-compose -f docker-compose.prod.yml pull frontend
-            docker-compose -f docker-compose.prod.yml up -d frontend
+            docker compose -f docker-compose.prod.yml pull app
+            docker compose -f docker-compose.prod.yml up -d --no-deps app

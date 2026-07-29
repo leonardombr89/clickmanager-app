@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "Spike": {
+    "clickmanager-app": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -22,7 +22,7 @@
               "bezier-easing"
             ],
             "outputPath": {
-              "base": "dist/Spike"
+              "base": "dist/clickmanager-app"
             },
             "index": "src/index.html",
             "polyfills": [
@@ -83,10 +83,10 @@
           },
           "configurations": {
             "production": {
-              "buildTarget": "Spike:build:production"
+              "buildTarget": "clickmanager-app:build:production"
             },
             "development": {
-              "buildTarget": "Spike:build:development"
+              "buildTarget": "clickmanager-app:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -94,7 +94,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "buildTarget": "Spike:build"
+            "buildTarget": "clickmanager-app:build"
           }
         },
         "test": {
