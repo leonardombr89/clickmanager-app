@@ -2,9 +2,12 @@ import { of } from 'rxjs';
 import { ListarOrcamentosComponent } from './listar-orcamentos.component';
 
 describe('ListarOrcamentosComponent', () => {
-  function criarComponente(permissoes: string[] = []): ListarOrcamentosComponent {
+  function criarComponente(permissoes: string[] = [], orcamentoService?: any): ListarOrcamentosComponent {
     return new ListarOrcamentosComponent(
-      { listar: jasmine.createSpy('listar').and.returnValue(of({ content: [], totalElements: 0 })) } as any,
+      orcamentoService || {
+        listar: jasmine.createSpy('listar').and.returnValue(of({ content: [], totalElements: 0 })),
+        detalhar: jasmine.createSpy('detalhar').and.returnValue(of({ id: 1 })),
+      } as any,
       { buscarResumo: jasmine.createSpy('buscarResumo').and.returnValue(of(null)) } as any,
       { temPermissao: (permissao: string) => permissoes.includes(permissao) } as any,
       { open: jasmine.createSpy('open') } as any,
@@ -30,5 +33,54 @@ describe('ListarOrcamentosComponent', () => {
     expect(component.origemLabel('BALCAO')).toBe('Balcão');
     expect(component.origemLabel('SITE')).toBe('Site');
     expect(component.origemLabel('INTEGRACAO')).toBe('Integração');
+  });
+
+  it('carrega o orçamento completo e abre o WhatsApp com a mensagem', () => {
+    const detalhe = {
+      id: 10,
+      protocolo: 'SL-20260724-000010',
+      nomeContato: 'Maria',
+      telefoneContato: '(11) 99999-9999',
+      total: 100,
+      itens: [{ id: 1, descricao: 'Produto teste', quantidade: 2, valorUnitario: 50, subtotal: 100 }],
+    };
+    const orcamentoService = {
+      detalhar: jasmine.createSpy('detalhar').and.returnValue(of(detalhe)),
+    };
+    const popup = {
+      opener: window,
+      location: { href: '' },
+      close: jasmine.createSpy('close'),
+    };
+    const windowOpen = spyOn(window, 'open').and.returnValue(popup as unknown as Window);
+    const component = criarComponente([], orcamentoService);
+
+    component.abrirWhatsApp({
+      id: 10,
+      telefoneCliente: '(11) 99999-9999',
+    });
+
+    expect(windowOpen).toHaveBeenCalledWith('about:blank', '_blank');
+    expect(orcamentoService.detalhar).toHaveBeenCalledWith(10);
+    expect(popup.opener).toBeNull();
+    expect(popup.location.href).toContain('https://wa.me/5511999999999?text=');
+    expect(decodeURIComponent(popup.location.href)).toContain('1. *Produto teste*');
+  });
+
+  it('prioriza os campos de contato no resumo do orçamento', () => {
+    const component = criarComponente();
+    const orcamento = {
+      id: 1,
+      nomeContato: 'Contato',
+      nomeCliente: 'Cliente',
+      telefoneContato: '11999999999',
+      telefoneCliente: '11888888888',
+      emailContato: 'contato@empresa.com',
+      emailCliente: 'cliente@empresa.com',
+    };
+
+    expect(component.clienteLabel(orcamento)).toBe('Contato');
+    expect(component.telefoneOrcamento(orcamento)).toBe('11999999999');
+    expect(component.emailOrcamento(orcamento)).toBe('contato@empresa.com');
   });
 });

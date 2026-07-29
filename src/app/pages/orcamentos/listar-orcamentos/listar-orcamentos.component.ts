@@ -30,6 +30,7 @@ import { AuthService } from 'src/app/services/auth.service';
 import { Orcamento, OrcamentoListagemParams, OrcamentoOrigem, OrcamentoResumo, OrcamentoStatus } from 'src/app/models/orcamento/orcamento.model';
 import { OrcamentoResumoService } from 'src/app/services/orcamento-resumo.service';
 import { OrcamentoService } from 'src/app/services/orcamento.service';
+import { montarUrlWhatsAppOrcamento } from '../shared/orcamento-whatsapp.util';
 
 type PeriodoFiltro = 'TODOS' | 'HOJE' | '7_DIAS' | '30_DIAS' | 'PERSONALIZADO';
 type OrdenacaoFiltro = 'RECENTES' | 'ANTIGOS' | 'MAIOR_VALOR' | 'MENOR_VALOR';
@@ -362,7 +363,23 @@ export class ListarOrcamentosComponent implements OnInit {
       return;
     }
 
-    window.open(`https://wa.me/${telefone}`, '_blank', 'noopener,noreferrer');
+    const popup = window.open('about:blank', '_blank');
+    if (!popup) {
+      this.toastr.info('O navegador bloqueou a nova janela. Permita pop-ups para abrir o WhatsApp.');
+      return;
+    }
+
+    popup.opener = null;
+    this.orcamentoService.detalhar(orcamento.id).subscribe({
+      next: (detalhe) => {
+        const telefoneDetalhe = this.telefoneNormalizado(detalhe) || telefone;
+        popup.location.href = montarUrlWhatsAppOrcamento(telefoneDetalhe, detalhe);
+      },
+      error: () => {
+        popup.close();
+        this.toastr.error('Não foi possível carregar os dados do orçamento para o WhatsApp.');
+      },
+    });
   }
 
   trackByOrcamento(index: number, orcamento: Orcamento): number {
@@ -374,15 +391,15 @@ export class ListarOrcamentosComponent implements OnInit {
   }
 
   clienteLabel(orcamento: Orcamento): string {
-    return orcamento.nomeCliente || orcamento.nome || 'Cliente não informado';
+    return orcamento.nomeContato || orcamento.nomeCliente || orcamento.nome || 'Cliente não informado';
   }
 
   telefoneOrcamento(orcamento: Orcamento): string | null {
-    return orcamento.telefoneCliente || orcamento.telefone || null;
+    return orcamento.telefoneContato || orcamento.telefoneCliente || orcamento.telefone || null;
   }
 
   emailOrcamento(orcamento: Orcamento): string | null {
-    return orcamento.emailCliente || orcamento.email || null;
+    return orcamento.emailContato || orcamento.emailCliente || orcamento.email || null;
   }
 
   dataCriacao(orcamento: Orcamento): string | null {
