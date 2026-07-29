@@ -41,8 +41,20 @@ cd /opt/clickmanager
 grep -R "frontend" nginx/conf.d
 ```
 
-Se houver `proxy_pass http://frontend` ou um upstream apontando para
-`frontend:80`, altere o host para `app`.
+Na configuração atual da VPS, altere:
+
+```nginx
+set $frontend http://clickmanager-frontend:80;
+```
+
+para:
+
+```nginx
+set $frontend http://clickmanager-app:80;
+```
+
+O nome da variável `$frontend` é apenas interno ao Nginx e pode permanecer.
+O ponto importante é o endereço do container ser `clickmanager-app:80`.
 
 ## Ordem segura para a virada
 
@@ -59,7 +71,7 @@ Se houver `proxy_pass http://frontend` ou um upstream apontando para
 3. Valide o Compose:
 
    ```bash
-   docker compose -f docker-compose.prod.yml config --quiet
+   docker-compose -f docker-compose.prod.yml config --quiet
    ```
 
 4. Faça o merge na `main`. O workflow publicará
@@ -67,7 +79,7 @@ Se houver `proxy_pass http://frontend` ou um upstream apontando para
 5. Confirme que o novo container está saudável:
 
    ```bash
-   docker compose -f docker-compose.prod.yml ps app
+   docker-compose -f docker-compose.prod.yml ps app
    docker logs --tail 100 clickmanager-app
    ```
 
@@ -88,3 +100,20 @@ Se houver `proxy_pass http://frontend` ou um upstream apontando para
 
 O banco, o backend e os demais serviços não precisam ser reiniciados nessa
 virada.
+
+## Rollback do Nginx
+
+Se o Nginx for recarregado antes de o container `clickmanager-app` existir,
+restaure temporariamente o destino antigo:
+
+```bash
+cd /opt/clickmanager
+sudo sed -i \
+  's#http://clickmanager-app:80#http://clickmanager-frontend:80#g' \
+  nginx/conf.d/default.conf
+docker exec clickmanager-nginx nginx -t
+docker exec clickmanager-nginx nginx -s reload
+```
+
+Esta VPS utiliza o executável legado `docker-compose`. Não substitua esses
+comandos por `docker compose`, pois o plugin correspondente não está instalado.
