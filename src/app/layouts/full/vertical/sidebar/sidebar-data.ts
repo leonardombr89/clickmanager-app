@@ -354,6 +354,40 @@ export const navItems: NavItem[] = [
         ]
     },
     {
+        displayName: 'ClickTV',
+        iconName: 'device-tv',
+        bgcolor: 'primary',
+        route: '/page/clicktv/midias',
+        requiredPermission: ['CLICKTV_VER', 'CLICKTV_MIDIAS_GERENCIAR', 'CLICKTV_PLAYLISTS_GERENCIAR', 'CLICKTV_TELAS_GERENCIAR'],
+        allowedEmpresaTipos: [TipoEmpresa.GRAFICA, TipoEmpresa.DEPOSITO],
+        children: [
+            {
+                displayName: 'Mídias',
+                iconName: 'point',
+                bgcolor: 'transparent',
+                route: '/page/clicktv/midias',
+                requiredPermission: ['CLICKTV_VER', 'CLICKTV_MIDIAS_GERENCIAR'],
+                allowedEmpresaTipos: [TipoEmpresa.GRAFICA, TipoEmpresa.DEPOSITO],
+            },
+            {
+                displayName: 'Playlists',
+                iconName: 'point',
+                bgcolor: 'transparent',
+                route: '/page/clicktv/playlists',
+                requiredPermission: ['CLICKTV_VER', 'CLICKTV_PLAYLISTS_GERENCIAR'],
+                allowedEmpresaTipos: [TipoEmpresa.GRAFICA, TipoEmpresa.DEPOSITO],
+            },
+            {
+                displayName: 'Telas',
+                iconName: 'point',
+                bgcolor: 'transparent',
+                route: '/page/clicktv/telas',
+                requiredPermission: ['CLICKTV_VER', 'CLICKTV_TELAS_GERENCIAR'],
+                allowedEmpresaTipos: [TipoEmpresa.GRAFICA, TipoEmpresa.DEPOSITO],
+            },
+        ]
+    },
+    {
         navCap: 'Ajuda',
         allowedEmpresaTipos: [TipoEmpresa.GRAFICA, TipoEmpresa.DEPOSITO],
     },
