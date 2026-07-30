@@ -1048,6 +1048,11 @@ export const PagesRoutes: Routes = [
     }
   },
   {
+    path: 'clicktv',
+    loadChildren: () =>
+      import('./clicktv/clicktv.routes').then((m) => m.CLICKTV_ROUTES),
+  },
+  {
     path: 'config/email-servidor',
     component: EmailServidorComponent,
     canActivate: [permissionGuard],

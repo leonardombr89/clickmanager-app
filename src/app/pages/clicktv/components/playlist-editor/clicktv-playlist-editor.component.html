@@ -1,0 +1,63 @@
+<section class="clicktv-page">
+  <div class="editor-heading">
+    <a mat-icon-button routerLink="/page/clicktv/playlists" aria-label="Voltar"><mat-icon>arrow_back</mat-icon></a>
+    <div><h2>{{ playlist?.nome || 'Editor de playlist' }}</h2>
+      <span class="clicktv-meta">{{ playlist?.orientacao }} · versão {{ playlist?.versao }} · duração configurada {{ duracaoTotal() }}s</span></div>
+    @if (salvando) { <mat-spinner diameter="24"></mat-spinner> }
+  </div>
+
+  @if (carregando) {
+    <div class="clicktv-state"><mat-spinner diameter="36"></mat-spinner><span>Carregando editor…</span></div>
+  } @else {
+    <div class="editor-layout">
+      <mat-card class="cardWithShadow library">
+        <mat-card-header><mat-card-title>Biblioteca</mat-card-title></mat-card-header>
+        <mat-card-content>
+          <mat-form-field appearance="outline" class="w-100"><mat-label>Buscar mídia</mat-label>
+            <input matInput [(ngModel)]="busca" (keyup.enter)="carregarBiblioteca()" />
+            <button mat-icon-button matSuffix (click)="carregarBiblioteca()"><mat-icon>search</mat-icon></button>
+          </mat-form-field>
+          <div class="library-list">
+            @for (midia of biblioteca; track midia.id) {
+              <button class="library-item" type="button" (click)="adicionar(midia)" *temPermissao="'CLICKTV_PLAYLISTS_GERENCIAR'">
+                <mat-icon>{{ midia.tipo === 'VIDEO' ? 'movie' : 'image' }}</mat-icon>
+                <span><strong>{{ midia.nome }}</strong><small>{{ midia.tipo }} · {{ midia.orientacao }}</small></span>
+                <mat-icon>add_circle</mat-icon>
+              </button>
+            } @empty {
+              <div class="clicktv-state compact">Nenhuma mídia disponível.</div>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="cardWithShadow sequence">
+        <mat-card-header><mat-card-title>Sequência de reprodução</mat-card-title></mat-card-header>
+        <mat-card-content>
+          @for (item of playlist?.itens || []; track item.id; let i = $index) {
+            <article class="sequence-item">
+              <div class="sequence-order">{{ i + 1 }}</div>
+              <mat-icon>{{ item.midiaTipo === 'VIDEO' ? 'movie' : 'image' }}</mat-icon>
+              <div class="sequence-info"><strong>{{ item.midiaNome }}</strong>
+                <small>{{ item.midiaTipo }} · {{ item.midiaStatus }}</small></div>
+              @if (item.midiaTipo === 'IMAGEM') {
+                <mat-form-field appearance="outline" class="duration"><mat-label>Segundos</mat-label>
+                  <input matInput type="number" min="1" [(ngModel)]="item.duracaoSegundos" (change)="salvarItem(item)" />
+                </mat-form-field>
+              }
+              <mat-slide-toggle [(ngModel)]="item.ativo" (change)="salvarItem(item)" *temPermissao="'CLICKTV_PLAYLISTS_GERENCIAR'">Ativo</mat-slide-toggle>
+              <div class="clicktv-actions" *temPermissao="'CLICKTV_PLAYLISTS_GERENCIAR'">
+                <button mat-icon-button (click)="mover(item,-1)" [disabled]="i === 0"><mat-icon>arrow_upward</mat-icon></button>
+                <button mat-icon-button (click)="mover(item,1)" [disabled]="i === (playlist?.itens?.length || 0)-1"><mat-icon>arrow_downward</mat-icon></button>
+                <button mat-icon-button color="warn" (click)="remover(item)"><mat-icon>delete</mat-icon></button>
+              </div>
+            </article>
+          } @empty {
+            <div class="clicktv-state"><mat-icon>playlist_add</mat-icon><strong>Playlist vazia</strong>
+              <span>Escolha uma mídia na biblioteca para adicioná-la.</span></div>
+          }
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+</section>

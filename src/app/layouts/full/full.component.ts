@@ -296,7 +296,9 @@ export class FullComponent implements OnInit, OnDestroy {
     usuario: Usuario
   ): NavItem[] {
     const possuiPermissao = (requeridas?: string[]) => {
-      return !requeridas || requeridas.some(p => permissoesUsuario.includes(p));
+      return usuario.proprietario === true
+        || !requeridas
+        || requeridas.some(p => permissoesUsuario.includes(p));
     };
 
     const aceitaTipoEmpresa = (tiposPermitidos?: TipoEmpresa[]) =>

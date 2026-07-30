@@ -122,6 +122,10 @@ export class AuthService {
   }
 
   temPermissao(permissao: string): boolean {
+    if (this.usuarioSubject.value?.proprietario === true) {
+      return true;
+    }
+
     const permissoes = this.permissionsService.getPermissions();
     return Object.prototype.hasOwnProperty.call(permissoes, permissao);
   }
@@ -166,59 +170,70 @@ export class AuthService {
   }
 
   getDefaultRouteForUsuario(usuario?: Usuario | null): string {
-    if (this.temPermissaoDisponivel('DEPOSITO_DASHBOARD_VER', usuario)) {
-      return '/page/deposito';
+    const usuarioResolvido = usuario || this.usuarioSubject.value;
+    const tipoEmpresa = this.getTipoEmpresa(usuarioResolvido);
+
+    if (usuarioResolvido?.proprietario === true) {
+      return tipoEmpresa === TipoEmpresa.DEPOSITO
+        ? '/page/deposito'
+        : '/dashboards/dashboard1';
     }
 
-    if (this.temPermissaoDisponivel('CATALOGO_PRODUTOS_VER', usuario)) {
-      return '/page/catalogo/produtos';
+    if (tipoEmpresa === TipoEmpresa.DEPOSITO) {
+      if (this.temPermissaoDisponivel('DEPOSITO_DASHBOARD_VER', usuarioResolvido)) {
+        return '/page/deposito';
+      }
+
+      if (this.temPermissaoDisponivel('CATALOGO_PRODUTOS_VER', usuarioResolvido)) {
+        return '/page/catalogo/produtos';
+      }
+
+      if (this.temPermissaoDisponivel('CATALOGO_CATEGORIAS_VER', usuarioResolvido)) {
+        return '/page/catalogo/categorias';
+      }
+
+      if (this.temPermissaoDisponivel('CATALOGO_MARCAS_VER', usuarioResolvido)) {
+        return '/page/catalogo/marcas';
+      }
+
+      if (this.temPermissaoDisponivel('DEPOSITO_ITENS_VER', usuarioResolvido)) {
+        return '/page/deposito/itens';
+      }
+
+      if (this.temPermissaoDisponivel('DEPOSITO_CATEGORIAS_VER', usuarioResolvido)) {
+        return '/page/deposito/categorias';
+      }
     }
 
-    if (this.temPermissaoDisponivel('CATALOGO_CATEGORIAS_VER', usuario)) {
-      return '/page/catalogo/categorias';
-    }
-
-    if (this.temPermissaoDisponivel('CATALOGO_MARCAS_VER', usuario)) {
-      return '/page/catalogo/marcas';
-    }
-
-    if (this.temPermissaoDisponivel('DEPOSITO_ITENS_VER', usuario)) {
-      return '/page/deposito/itens';
-    }
-
-    if (this.temPermissaoDisponivel('DEPOSITO_CATEGORIAS_VER', usuario)) {
-      return '/page/deposito/categorias';
-    }
-
-    if (this.temPermissaoDisponivel('ORCAMENTOS_VER', usuario)) {
+    if (this.temPermissaoDisponivel('ORCAMENTOS_VER', usuarioResolvido)) {
       return '/page/orcamentos';
     }
 
-    if (this.temPermissaoDisponivel('SITE_CONFIG_VER', usuario)) {
+    if (this.temPermissaoDisponivel('SITE_CONFIG_VER', usuarioResolvido)) {
       return '/page/site/configuracoes';
     }
 
-    if (this.temPermissaoDisponivel('SITE_BANNERS_VER', usuario)) {
+    if (this.temPermissaoDisponivel('SITE_BANNERS_VER', usuarioResolvido)) {
       return '/page/site/banners';
     }
 
-    if (this.temPermissaoDisponivel('SITE_PAGINAS_VER', usuario)) {
+    if (this.temPermissaoDisponivel('SITE_PAGINAS_VER', usuarioResolvido)) {
       return '/page/site/paginas';
     }
 
-    if (this.temPermissaoDisponivel('STORAGE_DASHBOARD_VER', usuario)) {
+    if (this.temPermissaoDisponivel('STORAGE_DASHBOARD_VER', usuarioResolvido)) {
       return '/page/site/armazenamento';
     }
 
-    if (this.temPermissaoDisponivel('STORAGE_ARQUIVOS_VER', usuario)) {
+    if (this.temPermissaoDisponivel('STORAGE_ARQUIVOS_VER', usuarioResolvido)) {
       return '/page/site/armazenamento/arquivos';
     }
 
-    if (this.temPermissaoDisponivel('DADOS_EMPRESA', usuario)) {
+    if (this.temPermissaoDisponivel('DADOS_EMPRESA', usuarioResolvido)) {
       return '/page/empresa';
     }
 
-    return this.getTipoEmpresa(usuario) === TipoEmpresa.DEPOSITO
+    return tipoEmpresa === TipoEmpresa.DEPOSITO
       ? '/page/ajuda'
       : '/dashboards/dashboard1';
   }
